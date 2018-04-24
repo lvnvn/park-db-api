@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -44,31 +45,83 @@ public class UserServices {
         return jdbcTemplate.query(query, readUserMapper, nickname).get(0);
     }
 
-    public UserModel updateProfile(UserModel model, String nickname){
+    public UserModel updateProfile(UserModel model, String nickname) {
+        /*System.out.println("wwwwwwwwwwwwww");
         if(model.getAbout() == null && model.getEmail() == null &&
                 model.getFullname() == null && model.getNickname() == null){
             String query = "select * from users where nickname = (?);";
             model = jdbcTemplate.query(query, readUserMapper, nickname).get(0);
         }
         else {
-            /*
-            String query = "UPDATE users SET ";
-            if(model.getAbout() != null)
-                query += "about = (?)";
-            if(model.getEmail() != null)
-                query += ", email = (?)";
-            if(model.getFullname() != null)
-                query += ", fullname = (?)";
-            query += " WHERE nickname = (?);";
-             */
-            String query = "UPDATE users SET about = (?), email = (?), fullname = (?)" +
-                    " WHERE nickname = (?);";
-            Integer flag = jdbcTemplate.update(query, model.getAbout(), model.getEmail(), model.getFullname(), nickname);
+            Integer flag = 0;
+            String query = "select * from users where nickname = (?);";
+            UserModel res_model = new UserModel(nickname,
+                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getFullname(),
+                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getEmail(),
+                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getAbout());
+            System.out.println("READ: " + res_model.getFullname() + res_model.getAbout());
+            System.out.println("wwwwwwwwwwwwwwttttttttttfffffff");
+            if(model.getAbout() != null) {
+                query = "UPDATE users SET about = (?) WHERE nickname = (?);";
+                flag = jdbcTemplate.update(query, model.getAbout(), nickname);
+                res_model.setAbout(model.getAbout());
+            }
+
+            if(model.getEmail() != null) {
+                query = "UPDATE users SET email = (?) WHERE nickname = (?);";
+                flag = jdbcTemplate.update(query, model.getEmail(), nickname);
+                res_model.setEmail(model.getEmail());
+            }
+
+            if(model.getFullname() != null) {
+                query = "UPDATE users SET fullname = (?) WHERE nickname = (?);";
+                flag = jdbcTemplate.update(query, model.getFullname(), nickname);
+                res_model.setFullname(model.getFullname());
+            }
             if(flag == 0) {
                 throw new DataAccessException(""){};
             }
+            res_model.setNickname(nickname);
+            return res_model;
         }
         model.setNickname(nickname);
+        return model;*/
+        model.setNickname(nickname);
+
+        String query = "update users set ";
+        ArrayList<String> queryParams = new ArrayList<>();
+        ArrayList<Object> params = new ArrayList<>();
+
+        if (model.getEmail() != null) {
+            queryParams.add(" email = ? ");
+            params.add(model.getEmail());
+        }
+        if (model.getAbout() != null) {
+            queryParams.add(" about = ? ");
+            params.add(model.getAbout());
+        }
+        if (model.getFullname() != null) {
+            queryParams.add(" fullname = ? ");
+            params.add(model.getFullname());
+        }
+
+        if (queryParams.size() > 0) {
+            query += queryParams.get(0);
+            if (queryParams.size() > 1) {
+                for (int i = 1; i < queryParams.size(); i++) {
+                    query += ", ";
+                    query += queryParams.get(i);
+                }
+            }
+        }
+        else {
+            return model;
+        }
+        query += "where nickname = ?";
+        params.add(model.getNickname());
+
+        //final String sqlQuery = "update users set email = ?, about = ?, fullname = ? where nickname = ?";
+        jdbcTemplate.update(query, params.toArray());
         return model;
     }
 

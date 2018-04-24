@@ -40,12 +40,13 @@ public class UserController {
     @RequestMapping(path="/api/user/{nickname}/profile", method = RequestMethod.POST)
     public ResponseEntity profile(@RequestBody UserModel model, @PathVariable String nickname){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(uservice.updateProfile(model, nickname));
+            uservice.updateProfile(model, nickname);
+            return ResponseEntity.status(HttpStatus.OK).body(uservice.getProfile(nickname));
         }
         catch (DuplicateKeyException exc){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(uservice.duplicateProfile(model.getEmail()));
         }
-        catch (DataAccessException exc){
+        catch (IndexOutOfBoundsException exc){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(uservice.notFoundProfile(nickname));
         }
     }
