@@ -12,7 +12,7 @@ public class ForumServices {
     JdbcTemplate jdbcTemplate;
     UserServices userService;
 
-    private RowMapper<ForumModel> readForumMapper = (rs, i) ->
+    public static RowMapper<ForumModel> readForumMapper = (rs, i) ->
             new ForumModel(rs.getInt("posts"),
                     rs.getString("slug"),
                     rs.getInt("threads"),

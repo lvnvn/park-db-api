@@ -16,7 +16,7 @@ import java.util.List;
 public class UserServices {
     JdbcTemplate jdbcTemplate;
 
-    private RowMapper<UserModel> readUserMapper = (rs, i) ->
+    public static RowMapper<UserModel> readUserMapper = (rs, i) ->
             new UserModel(rs.getString("nickname"),
                     rs.getString("fullname"),
                     rs.getString("email"),
