@@ -2,8 +2,12 @@ package db.parkdbapi.services;
 
 import db.parkdbapi.models.ErrorModel;
 import db.parkdbapi.models.ThreadModel;
+import db.parkdbapi.models.VoteModel;
+import db.parkdbapi.services.ForumServices;
 import db.parkdbapi.services.UserServices;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
+import org.springframework.dao.UncategorizedDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException;
 import org.springframework.stereotype.Service;
@@ -32,6 +36,12 @@ public class ThreadServices {
                 rs.getString("title"),
                 rs.getInt("votes"));
     };
+
+    public static RowMapper<VoteModel> readVoteMapper = (rs, i) ->
+            new VoteModel(rs.getString("nickname"),
+                    rs.getInt("thread"),
+                    rs.getInt("voice"));
+
     public ThreadServices(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -44,6 +54,9 @@ public class ThreadServices {
         query = "select * from users where nickname = (?);";
         if(jdbcTemplate.query(query, UserServices.readUserMapper, model.getAuthor()).size() == 0)
             throw new DataSourceLookupFailureException(""); //user not found
+        query = "select * from forums where slug = (?);";
+        if(jdbcTemplate.query(query, ForumServices.readForumMapper, model.getForum()).size() == 0)
+            throw new InvalidDataAccessResourceUsageException(""); //forum not found
 
         if(model.getCreated() == null) {
             query = "insert into threads (author, forum, message, title, slug) values (?, ?, ?, ?, ?);";
@@ -55,6 +68,8 @@ public class ThreadServices {
         }
         query = "select * from threads where title = (?);";
         model.setId(jdbcTemplate.query(query, readThreadMapper, model.getTitle()).get(0).getId());
+        query = "select * from forums where slug = (?);";
+        model.setForum(jdbcTemplate.query(query, ForumServices.readForumMapper, model.getForum()).get(0).getSlug());
         return model;
     }
 
@@ -105,5 +120,39 @@ public class ThreadServices {
     public ThreadModel getThread(ThreadModel model) {
         String query = "select * from threads where slug = (?);";
         return jdbcTemplate.query(query, readThreadMapper, model.getSlug()).get(0);
+    }
+
+    public ThreadModel vote(String slug_or_id, VoteModel model) {
+        Integer id = -1;
+        String query;
+        Integer delta = 0;
+        try{
+            id = Integer.parseInt(slug_or_id);
+        }catch(NumberFormatException e){}
+
+        if(id == -1) {
+            query = "select id from threads where slug = (?)";
+            id = jdbcTemplate.queryForObject(query, Integer.class, slug_or_id);
+        }
+
+        query = "select * from votes where nickname = (?) and thread = (?)";
+        if(jdbcTemplate.query(query, readVoteMapper, model.getNickname(), id).size() == 0){
+            query = "insert into votes (nickname, thread, voice) values (?, ?, ?);";
+            jdbcTemplate.update(query, model.getNickname(), id, model.getVoice());
+        } else {
+            query = "select voice from votes where thread = (?) and nickname = (?)";
+            delta = jdbcTemplate.queryForObject(query, Integer.class, id, model.getNickname());
+            query = "update votes set voice = (?) where thread = (?) and nickname = (?);";
+            jdbcTemplate.update(query, model.getVoice(), id, model.getNickname());
+        }
+
+        query = "select votes from threads where id = (?)";
+        Integer votes = jdbcTemplate.queryForObject(query, Integer.class, id);
+        votes = votes + model.getVoice() - delta;
+        query = "UPDATE threads SET votes = (?) WHERE id = (?);";
+        jdbcTemplate.update(query, votes, id);
+
+        query = "select * from threads where id = (?)";
+        return jdbcTemplate.query(query, readThreadMapper, id).get(0);
     }
 }

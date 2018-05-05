@@ -1,9 +1,11 @@
 package db.parkdbapi.controllers;
+import db.parkdbapi.models.VoteModel;
 import db.parkdbapi.services.ThreadServices;
 
 import db.parkdbapi.models.ThreadModel;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.datasource.lookup.DataSourceLookupFailureException;
@@ -30,6 +32,8 @@ public class ThreadController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(service.getThread(model));
         } catch (DataSourceLookupFailureException exc) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(service.notFoundUser(model));
+        } catch (InvalidDataAccessResourceUsageException exc) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(service.notFoundForum(model.getForum()));
         }
     }
 
@@ -43,6 +47,11 @@ public class ThreadController {
         } catch (DataIntegrityViolationException exc) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(service.notFoundForum(forum));
         }
+    }
+
+    @RequestMapping(path="/api/thread/{slug_or_id}/vote", method = RequestMethod.POST)
+    public ResponseEntity getAll(@PathVariable String slug_or_id, @RequestBody VoteModel model) {
+        return ResponseEntity.status(HttpStatus.OK).body(service.vote(slug_or_id, model));
     }
 
 

@@ -2,6 +2,7 @@ DROP TABLE if EXISTS users CASCADE;
 DROP TABLE if EXISTS forums CASCADE;
 DROP TABLE if EXISTS threads CASCADE;
 DROP TABLE if EXISTS posts CASCADE;
+DROP TABLE if EXISTS votes CASCADE;
 CREATE extension if not exists citext;
 
 CREATE TABLE if NOT EXISTS users (
@@ -28,7 +29,7 @@ id serial primary key ,
 message citext UNIQUE ,
 slug citext,
 title citext UNIQUE ,
-votes INTEGER
+votes INTEGER DEFAULT 0
 );
 
 CREATE TABLE if NOT EXISTS posts (
@@ -40,4 +41,10 @@ edited	boolean,
 message citext UNIQUE ,
 parent integer,
 thread integer REFERENCES threads (id) on DELETE CASCADE
+);
+
+CREATE TABLE if NOT EXISTS votes (
+nickname citext REFERENCES users (nickname) on DELETE CASCADE,
+thread INTEGER REFERENCES threads (id) on DELETE CASCADE,
+voice integer
 );
