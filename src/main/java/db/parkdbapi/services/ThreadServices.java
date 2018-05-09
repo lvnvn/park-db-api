@@ -155,4 +155,20 @@ public class ThreadServices {
         query = "select * from threads where id = (?)";
         return jdbcTemplate.query(query, readThreadMapper, id).get(0);
     }
+
+    public ThreadModel get(String slug_or_id) {
+        Integer id = -1;
+        String query;
+        try {
+            id = Integer.parseInt(slug_or_id);
+        } catch (NumberFormatException e) {
+        }
+
+        if (id == -1) {
+            query = "select id from threads where slug = (?)";
+            id = jdbcTemplate.queryForObject(query, Integer.class, slug_or_id);
+        }
+        query = "select * from threads where id = (?)";
+        return jdbcTemplate.query(query, readThreadMapper, id).get(0);
+    }
 }

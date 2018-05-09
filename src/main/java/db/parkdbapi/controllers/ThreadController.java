@@ -50,9 +50,12 @@ public class ThreadController {
     }
 
     @RequestMapping(path="/api/thread/{slug_or_id}/vote", method = RequestMethod.POST)
-    public ResponseEntity getAll(@PathVariable String slug_or_id, @RequestBody VoteModel model) {
+    public ResponseEntity vote(@PathVariable String slug_or_id, @RequestBody VoteModel model) {
         return ResponseEntity.status(HttpStatus.OK).body(service.vote(slug_or_id, model));
     }
 
-
+    @RequestMapping(path="/api/thread/{slug_or_id}/details", method = RequestMethod.GET)
+    public ResponseEntity get(@PathVariable String slug_or_id) {
+        return ResponseEntity.status(HttpStatus.OK).body(service.get(slug_or_id));
+    }
 }

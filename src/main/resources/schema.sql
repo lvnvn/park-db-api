@@ -39,7 +39,8 @@ forum citext REFERENCES forums (slug) on DELETE CASCADE,
 id serial primary key ,
 edited	boolean,
 message citext UNIQUE ,
-parent integer,
+parent integer DEFAULT 0,
+path integer[],
 thread integer REFERENCES threads (id) on DELETE CASCADE
 );
 
