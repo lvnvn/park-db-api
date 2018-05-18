@@ -33,7 +33,6 @@ public class ForumServices {
 
     public ForumModel get(String slug){
         String query = "select * from forums where slug = (?);";
-        //return jdbcTemplate.queryForObject(query, UserModel, nickname);
         ForumModel model =  jdbcTemplate.query(query, readForumMapper, slug).get(0);
         model.setUser(userService.getProfile(model.getUser()).getNickname());
         return model;

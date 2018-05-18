@@ -25,8 +25,9 @@ public class PostController {
     public ResponseEntity getAll(@PathVariable String slug_or_id,
                                  @RequestParam(value = "limit", required = false) Integer n,
                                  @RequestParam(value = "sort", required = false) String sort,
-                                 @RequestParam(value = "desc", required = false) Boolean order) {
-        return ResponseEntity.status(HttpStatus.OK).body(service.get(slug_or_id, n, sort, order));
+                                 @RequestParam(value = "desc", required = false) Boolean order,
+                                 @RequestParam(value = "since", required = false) Integer since) {
+        return ResponseEntity.status(HttpStatus.OK).body(service.get(slug_or_id, n, sort, order, since));
     }
 
 

@@ -58,10 +58,6 @@ public class PostService {
             String query;
             result.add(models.get(i));
 
-            /*query = "select * from users where nickname = (?)";
-            if(jdbcTemplate.query(query, UserServices.readUserMapper, models.get(i).getAuthor()).size() == 0)
-                throw new DataIntegrityViolationException("");*/
-
             if(id == -1) { // в запросе - slug треда
                 query = "select id from threads where slug = (?)";
                 id = jdbcTemplate.queryForObject(query, Integer.class, slug_or_id);
@@ -94,11 +90,13 @@ public class PostService {
                 query = "update posts set path = array_append(array[]::integer[],?) where id = (?)";
                 jdbcTemplate.update(query, postId, postId);
             }
+            /*query = "select path from posts where id = (?)";
+            System.out.println(jdbcTemplate.queryForObject(query, Array.class, postId));*/
         }
         return models;
     }
 
-    public List<PostModel> get(String slug_or_id, Integer n, String sort, Boolean order){
+    public List<PostModel> get(String slug_or_id, Integer n, String sort, Boolean order, Integer since){
         List<PostModel> result = new ArrayList<>();
         String query;
         Integer id = -1;
@@ -113,43 +111,106 @@ public class PostService {
 
 
         if(sort == null || sort.equals("flat")) {
-            if(order != null && order == true)
-                query = "select * from posts where thread = (?) order by id desc";
-            else
-                query = "select * from posts where thread = (?) order by id asc";
-            return  jdbcTemplate.query(query, readPostMapper, id);
+            if (order != null && order == true) {
+                if (since != null)
+                    query = "select * from posts where thread = (?) and id < (?) order by id desc";
+                else
+                    query = "select * from posts where thread = (?) order by id desc";
+            } else {
+                if (since != null)
+                    query = "select * from posts where thread = (?) and id > (?) order by id asc";
+                else
+                    query = "select * from posts where thread = (?) order by id asc";
+            }
+            if(n != null) {
+                query += " limit (?);";
+                if(since == null)
+                    return jdbcTemplate.query(query, readPostMapper, id, n);
+                return jdbcTemplate.query(query, readPostMapper, id, since, n);
+            }
+            if(since == null)
+                return  jdbcTemplate.query(query, readPostMapper, id);
+            return  jdbcTemplate.query(query, readPostMapper, id, since);
         }
 
         if(sort.equals("tree")) {
-            if(order != null && order == true)
-                query = "select * from posts where thread = (?) order by path desc";
-            else
-                query = "select * from posts where thread = (?) order by path asc";
-            return  jdbcTemplate.query(query, readPostMapper, id);
+            Array array = null;
+            if(order != null && order == true) {
+                if (since != null) {
+                    query = "select path from posts where id = (?)";
+                    array = jdbcTemplate.queryForObject(query, Array.class, since);
+                    query = "select * from posts where thread = (?) and path < (?) order by path desc";
+                }
+                else
+                    query = "select * from posts where thread = (?) order by path desc";
+            } else {
+                if (since != null) {
+                    query = "select path from posts where id = (?)";
+                    array = jdbcTemplate.queryForObject(query, Array.class, since);
+                    query = "select * from posts where thread = (?) and path > (?) order by path asc";
+                }
+                else
+                    query = "select * from posts where thread = (?) order by path asc";
+            }
+
+            if(n != null) {
+                query += " limit (?);";
+                if(since == null)
+                    return jdbcTemplate.query(query, readPostMapper, id, n);
+                return jdbcTemplate.query(query, readPostMapper, id, array, n);
+            }
+            if(since == null)
+                return  jdbcTemplate.query(query, readPostMapper, id);
+            return  jdbcTemplate.query(query, readPostMapper, id, array);
         }
 
         if(sort.equals("parent_tree")) {
-            if(order != null && order == true)
-            {
-                query = "select * from posts where thread = (?) and parent = 0 order by id desc";
-                List<PostModel> parents = jdbcTemplate.query(query, readPostMapper, id);
-                List<PostModel> children = new ArrayList<>();
-                for (int i = 0; i< parents.size(); i++)
-                {
-                    result.add(parents.get(i));
-                    query = "select * from posts where thread = (?) and parent = (?) order by path asc";
-                    children = jdbcTemplate.query(query, readPostMapper, id, parents.get(i).getId());
-                    for(int j = 0; j < children.size(); j++)
-                    {
-                        result.add(children.get(j));
-                    }
+            if(n != null) {
+                Array limitPath = null;
+                if(order != null && order == true)
+                    query = "select * from posts where thread = (?) and parent = 0 order by id desc limit (?)";
+                else
+                    query = "select * from posts where thread = (?) and parent = 0 order by id asc limit (?)";
+
+                List<PostModel> p = jdbcTemplate.query(query, readPostMapper, id, n);
+                if(p.size() > n-1) {
+                    query = "select path from posts where id = (?)";
+                    limitPath = jdbcTemplate.queryForObject(query, Array.class, p.get(n-1).getId());
+                    if(order != null && order == true)
+                        query = "select * from posts where thread = (?) and path >= (?) order by path desc";
+                    else
+                        query = "select * from posts where thread = (?) and path <= (?) order by path asc";
+                    return jdbcTemplate.query(query, readPostMapper, id, limitPath);
                 }
-                return result;
             }
-               // query = "select * from posts where thread = (?) order by path desc";
+            if(order != null && order == true) {
+                query = "select * from posts where thread = (?) and parent = 0 order by id desc";
+                List<PostModel> p = jdbcTemplate.query(query, readPostMapper, id);
+                    for(int i = 0; i < p.size(); i++) {
+                        result.add(p.get(i));
+                        List<PostModel> children = null;
+                        Integer curr = p.get(i).getId();
+                        System.out.println("added "+p.get(i).getId()+", prev = "+curr);
+                        if(i == 0) {
+                            query = "select * from posts where thread = (?) and path > '{" + curr +
+                                    "}' and parent <> 0 order by path asc";
+                        } else {
+                            Integer prev = p.get(i - 1).getId();
+                            query = "select * from posts where thread = (?) and path < '{" + prev + "}' and path > '{"
+                                    + curr + "}' and parent <> 0 order by path asc";
+                        }
+                        children = jdbcTemplate.query(query, readPostMapper, id);
+
+                        for (int j = 0; j < children.size(); j++){
+                            result.add(children.get(j));
+                            System.out.println("added "+children.get(j).getId()+", parent = "+children.get(j).getParent());
+                        }
+                    }
+                    return result;
+            }
             else
                 query = "select * from posts where thread = (?) order by path asc";
-            return  jdbcTemplate.query(query, readPostMapper, id);
+            return jdbcTemplate.query(query, readPostMapper, id);
         }
 
         return result;
