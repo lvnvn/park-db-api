@@ -20,7 +20,8 @@ public class UserServices {
             new UserModel(rs.getString("nickname"),
                     rs.getString("fullname"),
                     rs.getString("email"),
-                    rs.getString("about"));
+                    rs.getString("about"),
+                    rs.getInt("id"));
 
 
     public UserServices(JdbcTemplate jdbcTemplate) {
@@ -46,46 +47,6 @@ public class UserServices {
     }
 
     public UserModel updateProfile(UserModel model, String nickname) {
-        /*System.out.println("wwwwwwwwwwwwww");
-        if(model.getAbout() == null && model.getEmail() == null &&
-                model.getFullname() == null && model.getNickname() == null){
-            String query = "select * from users where nickname = (?);";
-            model = jdbcTemplate.query(query, readUserMapper, nickname).get(0);
-        }
-        else {
-            Integer flag = 0;
-            String query = "select * from users where nickname = (?);";
-            UserModel res_model = new UserModel(nickname,
-                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getFullname(),
-                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getEmail(),
-                    jdbcTemplate.query(query, readUserMapper, nickname).get(0).getAbout());
-            System.out.println("READ: " + res_model.getFullname() + res_model.getAbout());
-            System.out.println("wwwwwwwwwwwwwwttttttttttfffffff");
-            if(model.getAbout() != null) {
-                query = "UPDATE users SET about = (?) WHERE nickname = (?);";
-                flag = jdbcTemplate.update(query, model.getAbout(), nickname);
-                res_model.setAbout(model.getAbout());
-            }
-
-            if(model.getEmail() != null) {
-                query = "UPDATE users SET email = (?) WHERE nickname = (?);";
-                flag = jdbcTemplate.update(query, model.getEmail(), nickname);
-                res_model.setEmail(model.getEmail());
-            }
-
-            if(model.getFullname() != null) {
-                query = "UPDATE users SET fullname = (?) WHERE nickname = (?);";
-                flag = jdbcTemplate.update(query, model.getFullname(), nickname);
-                res_model.setFullname(model.getFullname());
-            }
-            if(flag == 0) {
-                throw new DataAccessException(""){};
-            }
-            res_model.setNickname(nickname);
-            return res_model;
-        }
-        model.setNickname(nickname);
-        return model;*/
         model.setNickname(nickname);
 
         String query = "update users set ";
