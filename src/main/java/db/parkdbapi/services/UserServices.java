@@ -1,5 +1,7 @@
 package db.parkdbapi.services;
 
+import db.parkdbapi.models.BookModel;
+import db.parkdbapi.services.BookServices;
 import db.parkdbapi.models.ErrorModel;
 import db.parkdbapi.models.UserModel;
 import org.springframework.dao.DataAccessException;
@@ -20,7 +22,7 @@ public class UserServices {
             new UserModel(rs.getString("nickname"),
                     rs.getString("fullname"),
                     rs.getString("email"),
-                    rs.getString("about"),
+                    rs.getInt("age"),
                     rs.getInt("id"));
 
 
@@ -28,66 +30,29 @@ public class UserServices {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public UserModel create(UserModel model, String nickname){
-        String query = "insert into users (nickname, fullname, email, about) values (?, ?, ?, ?);";
-        jdbcTemplate.update(query, nickname, model.getFullname(), model.getEmail(), model.getAbout());
-        model.setNickname(nickname);
+    public UserModel create(UserModel model, String email){
+        String query = "insert into users (nickname, fullname, email, age) values (?, ?, ?, ?);";
+        jdbcTemplate.update(query, model.getNickname(), model.getFullname(), email, model.getAge());
+        model.setEmail(email);
+
+        query = "select id from users where email = (?);";
+        model.setId(jdbcTemplate.queryForObject(query, Integer.class, model.getEmail()));
         return model;
     }
 
-    public List<UserModel> getDuplicate(String email, String nickname) {
-        String query = "select * from users where email = (?) or nickname = (?);";
-        return jdbcTemplate.query(query, readUserMapper, email, nickname);
+    public List<UserModel> getDuplicate(String email) {
+        String query = "select * from users where email = (?);";
+        return jdbcTemplate.query(query, readUserMapper, email);
     }
 
-    public UserModel getProfile(String nickname){
-        String query = "select * from users where nickname = (?);";
-        //return jdbcTemplate.queryForObject(query, UserModel, nickname);
-        return jdbcTemplate.query(query, readUserMapper, nickname).get(0);
+    public UserModel getProfile(String email){
+        String query = "select * from users where email = (?);";
+        return jdbcTemplate.query(query, readUserMapper, email).get(0);
     }
 
-    public UserModel updateProfile(UserModel model, String nickname) {
-        model.setNickname(nickname);
 
-        String query = "update users set ";
-        ArrayList<String> queryParams = new ArrayList<>();
-        ArrayList<Object> params = new ArrayList<>();
-
-        if (model.getEmail() != null) {
-            queryParams.add(" email = ? ");
-            params.add(model.getEmail());
-        }
-        if (model.getAbout() != null) {
-            queryParams.add(" about = ? ");
-            params.add(model.getAbout());
-        }
-        if (model.getFullname() != null) {
-            queryParams.add(" fullname = ? ");
-            params.add(model.getFullname());
-        }
-
-        if (queryParams.size() > 0) {
-            query += queryParams.get(0);
-            if (queryParams.size() > 1) {
-                for (int i = 1; i < queryParams.size(); i++) {
-                    query += ", ";
-                    query += queryParams.get(i);
-                }
-            }
-        }
-        else {
-            return model;
-        }
-        query += "where nickname = ?";
-        params.add(model.getNickname());
-
-        //final String sqlQuery = "update users set email = ?, about = ?, fullname = ? where nickname = ?";
-        jdbcTemplate.update(query, params.toArray());
-        return model;
-    }
-
-    public ErrorModel notFoundProfile(String nickname){
-        String message = "Can't find user by nickname: " + nickname;
+    public ErrorModel notFoundProfile(String email){
+        String message = "Can't find user by email: " + email;
         ErrorModel model = new ErrorModel(message);
         return model;
     }

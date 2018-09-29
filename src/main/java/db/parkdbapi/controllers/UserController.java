@@ -16,38 +16,23 @@ public class UserController {
         this.uservice = uservice;
     }
 
-    @RequestMapping(path="/api/user/{nickname}/create", method = RequestMethod.POST)
-    public ResponseEntity create(@RequestBody UserModel model,@PathVariable String nickname){
+    @RequestMapping(path="/api/user/{email}/create", method = RequestMethod.POST)
+    public ResponseEntity create(@RequestBody UserModel model,@PathVariable String email){
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(uservice.create(model, nickname));
+            return ResponseEntity.status(HttpStatus.CREATED).body(uservice.create(model, email));
         }
         catch (DuplicateKeyException exc){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(uservice.getDuplicate(model.getEmail(), nickname));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(uservice.getDuplicate(model.getEmail()));
         }
     }
 
-    @RequestMapping(path="/api/user/{nickname}/profile", method = RequestMethod.GET)
-    public ResponseEntity profile(@PathVariable String nickname){
+    @RequestMapping(path="/api/user/{email}/profile", method = RequestMethod.GET)
+    public ResponseEntity profile(@PathVariable String email){
         try {
-            return ResponseEntity.status(HttpStatus.OK).body(uservice.getProfile(nickname));
+            return ResponseEntity.status(HttpStatus.OK).body(uservice.getProfile(email));
         }
         catch(IndexOutOfBoundsException exc){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(uservice.notFoundProfile(nickname));
-        }
-
-    }
-
-    @RequestMapping(path="/api/user/{nickname}/profile", method = RequestMethod.POST)
-    public ResponseEntity profile(@RequestBody UserModel model, @PathVariable String nickname){
-        try {
-            uservice.updateProfile(model, nickname);
-            return ResponseEntity.status(HttpStatus.OK).body(uservice.getProfile(nickname));
-        }
-        catch (DuplicateKeyException exc){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(uservice.duplicateProfile(model.getEmail()));
-        }
-        catch (IndexOutOfBoundsException exc){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(uservice.notFoundProfile(nickname));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(uservice.notFoundProfile(email));
         }
     }
 }

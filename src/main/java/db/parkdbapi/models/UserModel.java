@@ -7,16 +7,19 @@ public class UserModel {
     String nickname;
     String fullname;
     String email;
-    String about;
+    Integer age;
+    Integer id;
 
     public UserModel(@JsonProperty("nickname") String nickname,
                      @JsonProperty("fullname") String fullname,
                      @JsonProperty("email") String email,
-                     @JsonProperty("about") String about) {
+                     @JsonProperty("age") Integer age,
+                     @JsonProperty("id") Integer id) {
         this.nickname = nickname;
         this.fullname = fullname;
         this.email = email;
-        this.about = about;
+        this.age = age;
+        this.id = id;
     }
 
     public String getNickname() {
@@ -43,11 +46,19 @@ public class UserModel {
         this.email = email;
     }
 
-    public String getAbout() {
-        return about;
+    public Integer getId() {
+        return id;
     }
 
-    public void setAbout(String about) {
-        this.about = about;
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 }

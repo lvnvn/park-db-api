@@ -2,12 +2,12 @@ package db.parkdbapi.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class AssignementModel {
+public class AssignmentModel {
     Integer book;
     Integer user;
     String expiration;
 
-    public AssignementModel(@JsonProperty("book") Integer book,
+    public AssignmentModel(@JsonProperty("book") Integer book,
                      @JsonProperty("user") Integer user,
                      @JsonProperty("expiration") String expiration) {
         this.book = book;
